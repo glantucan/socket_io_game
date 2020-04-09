@@ -19,6 +19,6 @@ http.listen(server_port, function() {
 
 
 const io = require('socket.io')(http, {});
-io.sockets.on('connection', function(socket) {
+io.on('connection', function(socket) {
     console.log('socket connection');
 });
