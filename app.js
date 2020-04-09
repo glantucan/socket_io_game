@@ -9,7 +9,10 @@ app.get('/', function (req, res) {
 // Serve any requested files from the client folder (for example the images used on index.html)
 app.use('/client', express.static(__dirname + '/client'));
 
-http.listen(2000, function() {
+var server_port = process.env.OPENSHIFT_NODEJS_PORT || 2000
+var server_ip_address = process.env.OPENSHIFT_NODEJS_IP || 'localhost'
+console.log(server_port, server_ip_address);
+http.listen(server_port, server_ip_address, function() {
     console.log('Listening on port 2000...');
 });
 
