@@ -2,8 +2,9 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <title>Document</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
     <style>
         canvas#ctx {
             border: 1px solid black;
@@ -11,24 +12,179 @@
     </style>
 </head>
 <body>
+
+    <div class="container">
     <h1>Multiplayer game hello world</h1>
-    <canvas id="ctx" width="500" height="500" ></canvas>
-    
+        <form>
+            <div class="form-group">
+            <label for="playerName">Nick name</label>
+            <input type="text" class="form-control" id="playerName" aria-describedby="playerNameHelp">
+            <small id="playerNameHelp" class="form-text text-muted">Tu <em>nick name</em> puede acabar teniendo algún número al final si el nombre que introduces ya está pillado.</small>
+            </div>
+            <button id="playBtn" type="button" class="btn btn-primary" disabled>Jugar</button>
+            <button id="leaveBtn" type="button" class="btn btn-primary" hidden>Abandonar</button>
+        </form>
+    </div>
+
+    <div class="container mt-4">
+        <div class="row">
+            <div class="col-md-8 order-md-1">
+                <canvas id="ctx" width="500" height="500" ></canvas>
+            </div>
+            <div id="sidePanel" class="col-md-4 order-md-2 mb-4" >
+                <p>Utiliza las teclas w,a,s,d para mover tu personaje.</p>
+                <p class="text-center"><strong>Players</strong></p>
+                <hr>
+                <div id="playersList">
+                    
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+
+
+    <!-- Logger window -->
+    <script src="/client/utils/Logger.js"></script>
+    <!-- Bootstrap dependencies -->
+    <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js" integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js" integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous"></script>
+    <!-- Socket.io -->
     <script src='/client/socket.io.js'></script>
     <script>
+        Logger.hide();
         const ctx = document.getElementById("ctx").getContext("2d");
+        const playerNameField = document.getElementById("playerName");
+        const playBtn = document.getElementById("playBtn");
+        const leaveBtn = document.getElementById("leaveBtn");
+        const playersList = document.getElementById("playersList");
+        
+        var playerId;
+
+        playerNameField.addEventListener('input',
+            function() {
+                if(playerNameField.value.length > 0) {
+                    playBtn.disabled = false;
+                } else {
+                    playBtn.disabled = true;
+                }
+            }
+        );
+
+        playBtn.addEventListener('click', 
+            () => {
+                leaveBtn.hidden = false;
+                playBtn.hidden = true;
+                playerNameField.disabled = true;
+                socket.emit('join-game', { name: playerNameField.value} );
+            }
+        );
+
+        leaveBtn.addEventListener('click', 
+            () => {
+                leaveBtn.hidden = true;
+                playBtn.hidden = false;
+                playerNameField.disabled = false;
+                socket.emit('leave-game', { name: playerNameField.value} );
+            }
+        );
+
         ctx.font = '30px Arial';
 
         var socket = io();
+
+        socket.on('joined', (id) => playerId = id);
 
         socket.on('new position', function(data) {
             ctx.clearRect(0,0,500,500);
             data.forEach( function (playerData) {
                 ctx.fillText(playerData.id, playerData.x, playerData.y);
-            })
-            
-            console.log(data);
+            });
         });
+
+        socket.on('server-message', (message) => {
+            console.log(message);
+            log(message);
+        });
+
+
+        socket.on('players-list-update', function(data) {
+            Array.from(playersList.children).forEach(child => playersList.removeChild(child));
+            data.forEach(function(playerData) {
+                var playerNode = document.createElement('p');
+                playerNode.id = 'player_' + playerData.id;
+                playerNode.innerHTML = '<strong>' + playerData.id + '</strong>: ' +
+                playerData.name;
+                playersList.appendChild(playerNode);
+            });
+        });
+
+        //// Keyboard control
+        //
+        document.onkeydown = function(e) {
+            if (      e.key === 'd' ) { // d
+                socket.emit('key-press', {
+                    playerId,
+                    inputId: 'right', 
+                    state: true
+                });
+            }
+            else if ( e.key === 'a' ) { // a
+                socket.emit('key-press', {
+                    playerId,
+                    inputId: 'left', 
+                    state: true
+                });
+            }
+
+            if ( e.key === 's' ) { // s
+                socket.emit('key-press', {
+                    playerId,
+                    inputId: 'down', 
+                    state: true
+                });
+            }
+            else if ( e.key === 'w' ) { // w
+                socket.emit('key-press', {
+                    playerId,
+                    inputId: 'up', 
+                    state: true
+                });
+            }
+        };
+        document.onkeyup = function(e) {
+            if (      e.key === 'd' ) { // d
+                socket.emit('key-press', {
+                    playerId,
+                    inputId: 'right', 
+                    state: false
+                });
+            }
+            if ( e.key === 'a' ) { // a
+                socket.emit('key-press', {
+                    playerId,
+                    inputId: 'left', 
+                    state: false
+                });
+            }
+
+            if ( e.key === 's' ) { // s
+                socket.emit('key-press', {
+                    playerId,
+                    inputId: 'down', 
+                    state: false
+                });
+            }
+            if ( e.key === 'w' ) { // w
+                socket.emit('key-press', {
+                    playerId,
+                    inputId: 'up', 
+                    state: false
+                });
+            }
+        }
 
     </script>
 </body>
