@@ -54,7 +54,6 @@
     <!-- Socket.io -->
     <script src='/client/socket.io.js'></script>
     <script>
-        Logger.hide();
         const ctx = document.getElementById("ctx").getContext("2d");
         const playerNameField = document.getElementById("playerName");
         const playBtn = document.getElementById("playBtn");
@@ -105,7 +104,7 @@
         });
 
         socket.on('server-message', (message) => {
-            console.log(message);
+            //console.log(message);
             log(message);
         });
 
