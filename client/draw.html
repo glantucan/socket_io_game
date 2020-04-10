@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+
+<html>
+    
+    <head>   
+    <link rel=stylesheet type="text/css" href="/client/styles.css">
+    </head>
+    
+    <body>
+        <canvas id="myCanvas" resize></canvas>
+        
+        <div id="color-container" class="option-container">
+            
+            <div id="current-color"></div>
+            
+            <div class="small-button color-button" id="black"></div>
+            <div class="small-button color-button" id="red"></div>
+            <div class="small-button color-button" id="green"></div>
+            <div class="small-button color-button" id="blue"></div>
+            <div class="small-button color-button" id="purple"></div>
+            <div class="small-button color-button" id="yellow"></div>
+            <div class="small-button color-button" id="orange"></div>
+            <div class="small-button color-button" id="pink"></div>
+            
+            <span id="hash">#</span>
+            <input type="text" id="hex-value" placeholder="Use hex">
+            <input type="submit" id="apply-hex" value="Apply">
+            
+        </div>
+        
+        <div id="tool-container" class="option-container">
+        
+            <form id="toolForm">
+                <input type="radio" name="tool" value="circle" checked>Circle<br>
+                <input type="radio" name="tool" value="brush">Brush<br>
+                <input type="radio" name="tool" value="rectangle">Rect<br>
+                <input type="radio" name="tool" value="line">Line<br>
+            </form>
+        
+        </div>
+        
+        <div id="size-container" class="option-container">
+            
+            <div id="current-width"></div>
+            
+            <div class="small-button" id="increase-width">+</div>
+            <div class="small-button" id="decrease-width">-</div>
+        
+        </div>
+        
+        <!-- jQuery -->
+        <script src="http://code.jquery.com/jquery-3.1.1.min.js"></script>
+        <!-- Paper.js -->
+        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/paper.js/0.10.2/paper-full.min.js"></script>
+        
+        <script type="text/paperscript" canvas="myCanvas">
+        
+            var currentColor = "black";
+            var currentTool = "circle";
+            var width = 30;
+            var linePath;
+            var brushPath;
+            var rectPoint1;
+            var rectPoint2;
+
+            function onMouseDown(event) {
+                switch (currentTool) {
+                    case "circle":
+                        var circle = Shape.Circle(event.point, width);
+                        circle.fillColor = currentColor;
+                        break;
+                    case "line":
+                        linePath = new Path();
+                        linePath.strokeColor = currentColor;
+                        linePath.strokeWidth = width;
+                        linePath.add(event.point);
+                        break;
+                    case "brush":
+                        brushPath = new Path();
+                        brushPath.strokeColor = currentColor;
+                        brushPath.strokeWidth = width;
+                        break;
+                    case "rectangle":
+                        rectPoint1 = event.point;
+                        break;
+                    default:
+                        break;
+                }
+            }
+
+            //mouse drag only used for brush tool
+            function onMouseDrag(event) {
+                switch(currentTool) {
+                    case "brush":
+                        brushPath.add(event.point);
+                        break;
+                    default:
+                        break;
+                }
+            }
+
+            //finish drawing based on mouseUp position if line or rectangle is selected
+            function onMouseUp(event) {
+                switch (currentTool) {
+                    case "line":
+                        linePath.add(event.point);
+                        break;
+                    case "rectangle":
+                        rectPoint2 = event.point;
+                        var rect = new Rectangle(rectPoint1, rectPoint2);
+                        var rectPath = new Path.Rectangle(rect);
+                        rectPath.fillColor = currentColor;            
+                        break;
+                    default:
+                        break;
+                }
+            }
+
+            //change currentTool if different radio button selected
+            $('#toolForm input').on('change', function() {
+                currentTool = $('input[name=tool]:checked', '#toolForm').val();
+            });
+
+            $(".color-button").click(function() {
+                //update currentColor variable from clicked background-color
+                currentColor = $(this).css("background-color");
+
+                //display current color above color options
+                $("#current-color").css({backgroundColor: currentColor});
+            });
+
+            $("#apply-hex").click(function() {
+                //add hash to user's hex and set current color
+                currentColor = "#" + $("#hex-value").val();
+
+                //set #current-color box to user's hex
+                $("#current-color").css({backgroundColor: currentColor});
+            });
+
+            $("#current-width").html(width);
+
+            $("#increase-width").click(function() {
+                if (width == 95) {
+                    alert ("Cannot have width of 100+!");
+                } else {
+                    width+= 5;
+                    $("#current-width").html(width);
+                }
+            });
+
+            $("#decrease-width").click(function() {
+                if (width == 0) {
+                    alert("Cannot have a negative width!");
+                } else {
+                    width-= 5;
+                    $("#current-width").html(width);
+                }
+            });
+        
+        </script>
+        
+    </body> 
+</html>

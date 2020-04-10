@@ -4,12 +4,32 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
+    <style>
+        canvas#ctx {
+            border: 1px solid black;
+        }
+    </style>
 </head>
 <body>
     <h1>Multiplayer game hello world</h1>
+    <canvas id="ctx" width="500" height="500" ></canvas>
+    
     <script src='/client/socket.io.js'></script>
     <script>
+        const ctx = document.getElementById("ctx").getContext("2d");
+        ctx.font = '30px Arial';
+
         var socket = io();
+
+        socket.on('new position', function(data) {
+            ctx.clearRect(0,0,500,500);
+            data.forEach( function (playerData) {
+                ctx.fillText(playerData.id, playerData.x, playerData.y);
+            })
+            
+            console.log(data);
+        });
+
     </script>
 </body>
 </html>
